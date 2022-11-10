@@ -200,22 +200,22 @@ class _NavigationBarComponentState extends State<NavigationBarComponent> {
           child: Material(
             shadowColor: Colors.transparent,
             color: Colors.transparent,
-            child: IconButton(
-                icon: widget.hasBack
-                    ? Image.asset(
-                        'images/button_back.png',
-                        alignment: Alignment.centerLeft,
-                        height: 20,
-                        width: 20,
-                      )
-                    : Image.asset(
-                        'images/icon_menu.png',
-                        alignment: Alignment.centerLeft,
-                        height: 27,
-                        width: 27,
-                      ),
-                onPressed:
-                    widget.hasBack ? widget.onBackClick : widget.onMenuClick),
+            // child: IconButton(
+            //     icon: widget.hasBack
+            //         ? Image.asset(
+            //             'images/button_back.png',
+            //             alignment: Alignment.centerLeft,
+            //             height: 20,
+            //             width: 20,
+            //           )
+            //         : Image.asset(
+            //             'images/icon_menu.png',
+            //             alignment: Alignment.centerLeft,
+            //             height: 27,
+            //             width: 27,
+            //           ),
+            //     onPressed:
+            //         widget.hasBack ? widget.onBackClick : widget.onMenuClick),
           ),
         ),
       ),

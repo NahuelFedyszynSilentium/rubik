@@ -1,6 +1,8 @@
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:infinite_widgets/infinite_widgets.dart';
 import 'package:mvc_pattern/mvc_pattern.dart';
 
 import '../../../values/k_colors.dart';
@@ -39,72 +41,41 @@ class _HomePagePageState extends StateMVC<HomePage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-          backgroundColor: KGrey,
-          body: Container(
-            padding: const EdgeInsets.all(25),
-            width: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  "Adios!",
-                  style: TextStyle(color: Colors.black),
-                ),
-                const SizedBox(height: 20),
-                ButtonComponent(
-                  text: "Hello Popup",
-                  width: double.infinity,
-                  onPressed: () {
-                    _con.onPopupButtonTap();
-                  },
-                ),
-                const SizedBox(height: 20),
-                ButtonComponent(
-                  backgroundColor: KBlue,
-                  borderColor: KBlue,
-                  text: "Do nothing",
-                  width: double.infinity,
-                  onPressed: () {},
-                ),
-                const SizedBox(height: 20),
-                ItemDataFormComponent.text(
-                  controller: _con.textInputController,
-                  placeHolder: "Test ...",
-                ),
-                const SizedBox(height: 20),
-                closableContainer(
-                  height: 100,
-                  child: Column(
-                    children: [
-                      RadioButtonComponent(
-                        label: Row(children: [
-                          const Text("Acepto los ",
-                              style: TextStyle(
-                                color: KLightblue,
-                                fontSize: KFontSizeMedium35,
-                              )),
-                          GestureDetector(
-                            onTap: () {
-                              log("On Terms and conditions tap");
-                            },
-                            child: const Text(
-                              "términos y condiciones",
-                              style: TextStyle(
-                                  color: KPrimary,
-                                  fontSize: KFontSizeMedium35,
-                                  fontStyle: FontStyle.italic),
-                            ),
-                          )
-                        ]),
-                        onTap: (bool isCheck) {},
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )),
+        backgroundColor: KGrey,
+        body: InfiniteListView(
+          itemBuilder: (p0, p1) => _element(),
+          itemCount: 81,
+          nextData: _nextData,
+        ),
+      ),
     );
+  }
+
+  Widget _buildRow() {
+    return Row(
+      children: [
+        _element(),
+        _element(),
+        _element(),
+      ],
+    );
+  }
+
+  Widget _element() {
+    Size x = MediaQuery.of(context).size;
+    double height = x.height / 5;
+    double width = x.width / 5;
+    return Padding(
+      padding: const EdgeInsets.all(5),
+      child: SizedBox(
+        height: height,
+        width: width,
+        child: Container(color: Colors.black),
+      ),
+    );
+  }
+
+  _nextData() {
+    return _element();
   }
 }

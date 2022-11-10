@@ -97,9 +97,11 @@ class _AboutDialogPopup extends State<HelloDialogPopup> {
           child: Container(
             height: 30,
             width: 30,
-            decoration: const BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage("images/button_close.png"))),
+            // decoration: const BoxDecoration(
+            //   image: DecorationImage(
+            //     image: AssetImage("images/button_close.png"),
+            //   ),
+            // ),
           ),
         ),
       ),

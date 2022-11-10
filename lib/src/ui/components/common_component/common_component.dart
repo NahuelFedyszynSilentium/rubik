@@ -28,9 +28,11 @@ Widget closableContainer({
             },
             child: Container(
               decoration: const BoxDecoration(
-                  color: Colors.transparent,
-                  image: DecorationImage(
-                      image: AssetImage("images/button_close.png"))),
+                color: Colors.red,
+                // image: DecorationImage(
+                //   image: AssetImage("images/button_close.png"),
+                // ),
+              ),
               height: 40,
               width: 40,
             ),

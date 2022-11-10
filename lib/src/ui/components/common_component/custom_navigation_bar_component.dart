@@ -51,13 +51,14 @@ loginNavigationBar({required Function onBack, Color iconColor = Colors.white}) {
     child: Padding(
       padding: const EdgeInsets.only(left: 10),
       child: IconButton(
-          icon: Image.asset(
-            'images/button_back.png',
-            alignment: Alignment.centerLeft,
-            height: 20,
-            width: 20,
-            color: iconColor,
-          ),
+          icon: const Icon(Icons.close),
+          // icon: Image.asset(
+          //   'images/button_back.png',
+          //   alignment: Alignment.centerLeft,
+          //   height: 20,
+          //   width: 20,
+          //   color: iconColor,
+          // ),
           onPressed: () {
             onBack();
           }),

@@ -231,13 +231,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.2"
-  infinite_widgets:
-    dependency: "direct main"
-    description:
-      name: infinite_widgets
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.2"
   intl:
     dependency: "direct main"
     description:
@@ -579,6 +572,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.4.12"
+  transparent_pointer:
+    dependency: "direct main"
+    description:
+      name: transparent_pointer
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   typed_data:
     dependency: transitive
     description:

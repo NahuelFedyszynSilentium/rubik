@@ -50,10 +50,10 @@ class _MyHomePageState extends State<MyApp> {
         const SystemUiOverlayStyle(statusBarColor: Colors.black));
 
     return MaterialApp(
-      supportedLocales: const [
-        Locale('es', ''),
-        Locale('en', ''),
-      ],
+      // supportedLocales: const [
+      //   Locale('es', ''),
+      //   Locale('en', ''),
+      // ],
 
       navigatorKey: PageManager().navigatorKey,
       locale: _locale,
@@ -78,7 +78,7 @@ class _MyHomePageState extends State<MyApp> {
       ),
       //theme: ThemeData(fontFamily: 'Sans'),
       title: 'Template',
-      home: _home(),
+      home: HomePage(null),
     );
   }
 
@@ -111,13 +111,13 @@ class _MyHomePageState extends State<MyApp> {
   }
 
   _initPage() {
-    if (DataManager().hasSession()) {
-      // Si ya tengo sesion, el provider nunca se carga por el login (ya que nos saltamos esa pantalla), por lo que ademas de ir al DashBoard, tenemos que cargar el profile de provider
-      return const HomePage(null);
-    } else {
-      return const HomePage(null);
-      // return LoginPage(null);
-    }
+    // if (DataManager().hasSession()) {
+    //   // Si ya tengo sesion, el provider nunca se carga por el login (ya que nos saltamos esa pantalla), por lo que ademas de ir al DashBoard, tenemos que cargar el profile de provider
+    //   return const HomePage(null);
+    // } else {
+    //   return const HomePage(null);
+    //   // return LoginPage(null);
+    // }
   }
 
   _initApp() async {

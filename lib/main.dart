@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:rubik/src/providers/app_provider.dart';
+import 'package:rubik/src/ui/screens/test_page.dart';
 
 import 'src/enums/culture.dart';
 import 'src/managers/data_manager.dart';
@@ -78,7 +79,7 @@ class _MyHomePageState extends State<MyApp> {
       ),
       //theme: ThemeData(fontFamily: 'Sans'),
       title: 'Template',
-      home: HomePage(null),
+      home: const TestPage(),
     );
   }
 

@@ -116,6 +116,25 @@ class _HomePagePageState extends StateMVC<HomePage> {
     });
   }
 
+  _onZoom(int region) {
+    switch (region) {
+      case 0:
+
+      case 1:
+
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      default:
+        return;
+    }
+  }
+
   HorizontalDrag? _acceptHorizontalScroll(Offset offset) {
     return null;
   }
@@ -144,7 +163,9 @@ class _HomePagePageState extends StateMVC<HomePage> {
           Row(
             children: <Widget>[
               for (int column = 0; column < _columnCount; column++)
-                _element(_isWidgetVisible(row, column, viewport))
+                _element(
+                  _isWidgetVisible(row, column, viewport),
+                ),
             ],
           )
       ],

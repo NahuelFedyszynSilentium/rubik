@@ -1,3 +1,4 @@
+import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,17 @@ class TestPage extends StatefulWidget {
 
 class TestPageState extends State<TestPage> {
   final ScrollController _controller = ScrollController();
+
+  late IndexedScrollController verticalController;
+  late IndexedScrollController horizontalController;
+  late double _cardHeight;
+  late double _cardWidth;
+  late BoxConstraints _viewportConstraints;
+  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
+  bool _flag = true;
+  int _verticalIndex = 0;
+  int _horizontalIndex = 0;
+
   List<String> itemList = [
     "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
     "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
@@ -36,105 +48,116 @@ class TestPageState extends State<TestPage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Scaffold(
-      body: _content(),
-    ));
-  }
-
-  _child(int i, int j) {
-    // double colorValue = Random().nextDouble() * 0xFFFFFF.toInt();
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        color: Colors.grey.withOpacity(1.0),
-        child: Center(
-          // Cambiar el child para probar con imágenes
-          child: Text(
-            "($i,$j)",
-            style: const TextStyle(color: Colors.black),
-          ),
-          // child: Image.network(itemList[Random().nextInt(5)])
+      child: Scaffold(
+        appBar: AppBar(),
+        body: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            _calculateValues(constraints);
+            return _content();
+          },
         ),
       ),
     );
   }
 
-  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
-  bool flag = true;
-
-  var verticalIndex = 0;
-  var horizontalIndex = 0;
+  void _calculateValues(BoxConstraints constraints) {
+    _cardHeight = constraints.maxHeight * 0.25;
+    _cardWidth = constraints.maxWidth * 0.25;
+    _viewportConstraints = constraints;
+    horizontalController = IndexedScrollController(
+        keepScrollOffset: true, initialScrollOffset: _cardWidth / 2);
+    verticalController = IndexedScrollController(
+        keepScrollOffset: true, initialScrollOffset: _cardHeight / 2);
+  }
 
   _content() {
-    var controller = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.height * 0.07);
-    var controller2 = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.width * 0.1);
-
     return GestureDetector(
-      onPanEnd: (details) => {flag = true},
-      onPanUpdate: (details) {
-        // Swiping in up direction.
-        int sensitivity = 2;
-        if (details.delta.dy > sensitivity) {
-          verticalIndex = swipeAction(
-            SwipeDirection.up,
-            verticalIndex,
-            controller,
-            -MediaQuery.of(context).size.height * 0.90,
-            -MediaQuery.of(context).size.height * 0.07,
-          );
-        }
-
-        // Swiping in down direction.
-        if (details.delta.dy < -sensitivity) {
-          verticalIndex = swipeAction(
-            SwipeDirection.down,
-            verticalIndex,
-            controller,
-            MediaQuery.of(context).size.height * 0.75,
-            -MediaQuery.of(context).size.height * 0.07,
-          );
-        }
-
-        // Swiping in right direction.
-        if (details.delta.dx < -sensitivity) {
-          horizontalIndex = swipeAction(
-            SwipeDirection.right,
-            horizontalIndex,
-            controller2,
-            MediaQuery.of(context).size.width * 0.70,
-            -MediaQuery.of(context).size.width * 0.1,
-          );
-        }
-
-        // Swiping in left direction.
-        if (details.delta.dx > sensitivity) {
-          horizontalIndex = swipeAction(
-            SwipeDirection.left,
-            horizontalIndex,
-            controller2,
-            -MediaQuery.of(context).size.width * 0.90,
-            -MediaQuery.of(context).size.width * 0.1,
-          );
-        }
-      },
+      onPanUpdate: _onPanUpdate,
+      // onHorizontalDragUpdate: _onHorizontalDragUpdate,
+      // onHorizontalDragDown: (details) => {_flag = true},
+      // onVerticalDragUpdate: _onVerticalDragUpdate,
+      // onVerticalDragEnd: (details) => {_flag = true},
       child: IndexedListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
-        controller: controller2,
+        controller: horizontalController,
         itemBuilder: (context, i) => SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
+          width: _cardWidth,
           child: IndexedListView.builder(
-            controller: controller,
+            controller: verticalController,
             physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, j) => _child(i, j),
+            itemBuilder: (context, j) => _card(i, j),
           ),
         ),
       ),
     );
   }
+
+  _card(int i, int j) {
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: Colors.red)),
+      height: _cardHeight,
+      child: Container(
+        margin: const EdgeInsets.all(3),
+        height: double.infinity,
+        width: double.infinity,
+        color: Colors.grey.withOpacity(1.0),
+        alignment: Alignment.center,
+        child: Text(
+          "($i,$j)",
+          style: const TextStyle(color: Colors.black),
+        ),
+      ),
+    );
+  }
+
+  // void _onHorizontalDragUpdate(DragUpdateDetails details) {
+  //   if (details.primaryDelta != null && details.primaryDelta! > 0) {
+  //     //Arrastre hacia la izquierda
+  //     _horizontalIndex = swipeAction(
+  //       SwipeDirection.left,
+  //       _horizontalIndex,
+  //       horizontalController,
+  //       -(_cardWidth / 2),
+  //       -(_cardWidth / 2),
+  //     );
+  //   } else if (details.primaryDelta != null && details.primaryDelta! < 0) {
+  //     //Arrastre hacia la derecha
+  //     _horizontalIndex = swipeAction(
+  //       SwipeDirection.right,
+  //       _horizontalIndex,
+  //       horizontalController,
+  //       (_cardWidth / 2),
+  //       -(_cardWidth / 2),
+  //     );
+  //   } else {
+  //     return;
+  //   }
+  // }
+
+  // void _onVerticalDragUpdate(DragUpdateDetails details) {
+  //   if (details.primaryDelta != null && details.primaryDelta! > 0) {
+  //     //Arrastre hacia arriba
+  //     _verticalIndex = swipeAction(
+  //       SwipeDirection.up,
+  //       _verticalIndex,
+  //       verticalController,
+  //       -(_cardHeight / 2),
+  //       -(_cardHeight / 2),
+  //     );
+  //   } else if (details.primaryDelta != null && details.primaryDelta! < 0) {
+  //     //Arrastre hacia abajo
+  //     _verticalIndex = swipeAction(
+  //       SwipeDirection.down,
+  //       _verticalIndex,
+  //       verticalController,
+  //       (_cardHeight / 2),
+  //       -(_cardHeight / 2),
+  //     );
+  //   } else {
+  //     return;
+  //   }
+  // }
 
   int swipeAction(
     SwipeDirection swipeDirection,
@@ -143,32 +166,80 @@ class TestPageState extends State<TestPage> {
     double moovingOffset,
     double startOffset,
   ) {
-    var duration = const Duration(milliseconds: 400);
+    Duration duration = const Duration(milliseconds: 400);
 
-    if (flag) {
+    if (_flag) {
       switch (swipeDirection) {
         case SwipeDirection.up:
         case SwipeDirection.left:
           index--;
           break;
         case SwipeDirection.down:
+          break;
         case SwipeDirection.right:
           index++;
           break;
         default:
           break;
       }
-      flag = false;
 
+      _flag = false;
       //Muevo los renderizados con animación
-      controller.animateToWithSameOriginIndex(moovingOffset,
-          duration: duration);
+      controller
+          .animateToWithSameOriginIndex(moovingOffset, duration: duration)
+          .then((value) => _flag = true);
+
       //Después muevo el resto de listas, sin animación
-      Future.delayed(duration).then(
-        (value) => controller.animateToIndexAndOffset(
-            index: index, offset: startOffset),
-      );
+      Future.delayed(duration).then((value) =>
+          controller.jumpToIndexAndOffset(index: index, offset: startOffset));
     }
     return index;
+  }
+
+  _onPanUpdate(DragUpdateDetails details) {
+    // Swiping in up direction.
+    int sensitivity = 2;
+    if (details.delta.dy > sensitivity) {
+      _verticalIndex = swipeAction(
+        SwipeDirection.up,
+        _verticalIndex,
+        verticalController,
+        -(_cardHeight / 2),
+        _cardHeight / 2,
+      );
+    }
+
+    // Swiping in down direction.
+    if (details.delta.dy < -sensitivity) {
+      _verticalIndex = swipeAction(
+        SwipeDirection.down,
+        _verticalIndex,
+        verticalController,
+        _cardHeight / 2,
+        -_cardHeight / 2,
+      );
+    }
+
+    // Swiping in right direction.
+    if (details.delta.dx < -sensitivity) {
+      _horizontalIndex = swipeAction(
+        SwipeDirection.right,
+        _horizontalIndex,
+        horizontalController,
+        _cardWidth / 2,
+        -_cardWidth / 2,
+      );
+    }
+
+    // Swiping in left direction.
+    if (details.delta.dx > sensitivity) {
+      _horizontalIndex = swipeAction(
+        SwipeDirection.left,
+        _horizontalIndex,
+        horizontalController,
+        -_cardWidth / 2,
+        _cardWidth / 2,
+      );
+    }
   }
 }

@@ -58,6 +58,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   bool flag = true;
   IndexedScrollController horizontalController = IndexedScrollController();
   IndexedScrollController verticalController = IndexedScrollController();
+  bool isZoomingIn = false;
 
   int verticalIndex = 0;
   int horizontalIndex = 0;
@@ -184,7 +185,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   ) {
     var duration = const Duration(milliseconds: 400);
 
-    if (flag) {
+    if (flag && !isZoomingIn) {
       flag = false;
       switch (swipeDirection) {
         case SwipeDirection.up:
@@ -307,9 +308,14 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   }
 
   void _onMouseRegionTap({required int row, required int column}) async {
+    if (!flag) {
+      return;
+    }
+    isZoomingIn = true;
     _horizontalScroll(column);
     _verticalScroll(row);
-    _animationController.forward();
+    await _animationController.forward();
+    isZoomingIn = false;
     isZoomedIn = true;
   }
 

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:indexed_list_view/indexed_list_view.dart';
+import 'package:transparent_pointer/transparent_pointer.dart';
 
 enum SwipeDirection { up, down, left, right }
 
@@ -12,8 +13,28 @@ class TestPage extends StatefulWidget {
   TestPageState createState() => TestPageState();
 }
 
-class TestPageState extends State<TestPage> {
-  final ScrollController _controller = ScrollController();
+class TestPageState extends State<TestPage> with TickerProviderStateMixin {
+  @override
+  void initState() {
+    super.initState();
+    buildSizes = true;
+    isZoomedIn = false;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  late final AnimationController _animationController = AnimationController(
+    duration: const Duration(milliseconds: 700),
+    vsync: this,
+  );
+  late final Animation<double> _animation = Tween(
+    begin: 1.0,
+    end: 2.75,
+  ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
   List<String> itemList = [
     "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
     "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
@@ -22,116 +43,134 @@ class TestPageState extends State<TestPage> {
     "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
     "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
   ];
-  @override
-  void initState() {
-    super.initState();
-  }
 
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
-  }
+  bool? buildSizes;
+  bool isZoomedIn = false;
+  double? containerHeight;
+  double? containerWidth;
+  double? initialVerticalScrollOffset;
+  double? initialHorizontalScrollOffset;
+  double? upMovementDistance;
+  double? downMovementDistance;
+  double? rightMovementDistance;
+  double? leftMovementDistance;
+  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
+  bool flag = true;
+  IndexedScrollController horizontalController = IndexedScrollController();
+  IndexedScrollController verticalController = IndexedScrollController();
+
+  int verticalIndex = 0;
+  int horizontalIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Scaffold(
-      body: _content(),
-    ));
-  }
-
-  _child(int i, int j) {
-    // double colorValue = Random().nextDouble() * 0xFFFFFF.toInt();
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        color: Colors.grey.withOpacity(1.0),
-        child: Center(
-          // Cambiar el child para probar con imágenes
-          child: Text(
-            "($i,$j)",
-            style: const TextStyle(color: Colors.black),
-          ),
-          // child: Image.network(itemList[Random().nextInt(5)])
-        ),
-      ),
+      child: Scaffold(
+          appBar: AppBar(),
+          body: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            if (buildSizes != null && buildSizes!) setSizes(constraints);
+            return _content(constraints);
+          })),
     );
   }
 
-  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
-  bool flag = true;
+  _content(BoxConstraints constraints) {
+    verticalController = IndexedScrollController(
+        initialScrollOffset: initialVerticalScrollOffset!,
+        initialIndex: verticalIndex);
+    horizontalController = IndexedScrollController(
+        initialScrollOffset: initialHorizontalScrollOffset!,
+        initialIndex: horizontalIndex);
 
-  var verticalIndex = 0;
-  var horizontalIndex = 0;
+    return Stack(
+      children: [
+        _zoomRegion(),
+        TransparentPointer(
+          child: ScaleTransition(
+            scale: _animation,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onLongPress: _zoomOut,
+              onPanUpdate: (details) {
+                // Swiping in up direction.
+                int sensitivity = 2;
+                if (details.delta.dy > sensitivity) {
+                  verticalIndex = swipeAction(
+                    SwipeDirection.up,
+                    verticalIndex,
+                    verticalController,
+                    upMovementDistance!,
+                    initialVerticalScrollOffset!,
+                  );
+                }
 
-  _content() {
-    var controller = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.height * 0.07);
-    var controller2 = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.width * 0.1);
+                // Swiping in down direction.
+                if (details.delta.dy < -sensitivity) {
+                  verticalIndex = swipeAction(
+                    SwipeDirection.down,
+                    verticalIndex,
+                    verticalController,
+                    downMovementDistance!,
+                    initialVerticalScrollOffset!,
+                  );
+                }
 
-    return GestureDetector(
-      onPanEnd: (details) => {flag = true},
-      onPanUpdate: (details) {
-        // Swiping in up direction.
-        int sensitivity = 2;
-        if (details.delta.dy > sensitivity) {
-          verticalIndex = swipeAction(
-            SwipeDirection.up,
-            verticalIndex,
-            controller,
-            -MediaQuery.of(context).size.height * 0.90,
-            -MediaQuery.of(context).size.height * 0.07,
-          );
-        }
+                // Swiping in right direction.
+                if (details.delta.dx < -sensitivity) {
+                  horizontalIndex = swipeAction(
+                    SwipeDirection.right,
+                    horizontalIndex,
+                    horizontalController,
+                    rightMovementDistance!,
+                    initialHorizontalScrollOffset!,
+                  );
+                }
 
-        // Swiping in down direction.
-        if (details.delta.dy < -sensitivity) {
-          verticalIndex = swipeAction(
-            SwipeDirection.down,
-            verticalIndex,
-            controller,
-            MediaQuery.of(context).size.height * 0.75,
-            -MediaQuery.of(context).size.height * 0.07,
-          );
-        }
-
-        // Swiping in right direction.
-        if (details.delta.dx < -sensitivity) {
-          horizontalIndex = swipeAction(
-            SwipeDirection.right,
-            horizontalIndex,
-            controller2,
-            MediaQuery.of(context).size.width * 0.70,
-            -MediaQuery.of(context).size.width * 0.1,
-          );
-        }
-
-        // Swiping in left direction.
-        if (details.delta.dx > sensitivity) {
-          horizontalIndex = swipeAction(
-            SwipeDirection.left,
-            horizontalIndex,
-            controller2,
-            -MediaQuery.of(context).size.width * 0.90,
-            -MediaQuery.of(context).size.width * 0.1,
-          );
-        }
-      },
-      child: IndexedListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        controller: controller2,
-        itemBuilder: (context, i) => SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: IndexedListView.builder(
-            controller: controller,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, j) => _child(i, j),
+                // Swiping in left direction.
+                if (details.delta.dx > sensitivity) {
+                  horizontalIndex = swipeAction(
+                    SwipeDirection.left,
+                    horizontalIndex,
+                    horizontalController,
+                    leftMovementDistance!,
+                    initialHorizontalScrollOffset!,
+                  );
+                }
+              },
+              child: IndexedListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                controller: horizontalController,
+                itemBuilder: (context, i) => SizedBox(
+                  width: containerWidth,
+                  child: IndexedListView.builder(
+                    controller: verticalController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, j) => _child(i, j, constraints),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
+      ],
+    );
+  }
+
+  _child(int i, int j, BoxConstraints constraints) {
+    return SizedBox(
+      height: containerHeight,
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        alignment: Alignment.center,
+        color: Colors.grey.withOpacity(1.0),
+        // Cambiar el child para probar con imágenes
+        child: Text(
+          "($i,$j)",
+          style: const TextStyle(color: Colors.black),
+        ),
+        // child: Image.network(itemList[Random().nextInt(5)])
       ),
     );
   }
@@ -146,6 +185,7 @@ class TestPageState extends State<TestPage> {
     var duration = const Duration(milliseconds: 400);
 
     if (flag) {
+      flag = false;
       switch (swipeDirection) {
         case SwipeDirection.up:
         case SwipeDirection.left:
@@ -158,17 +198,221 @@ class TestPageState extends State<TestPage> {
         default:
           break;
       }
-      flag = false;
+      // Muevo los renderizados con animación
+      controller
+          .animateToWithSameOriginIndex(moovingOffset, duration: duration)
+          .then((value) => flag = true);
 
-      //Muevo los renderizados con animación
-      controller.animateToWithSameOriginIndex(moovingOffset,
-          duration: duration);
       //Después muevo el resto de listas, sin animación
-      Future.delayed(duration).then(
-        (value) => controller.animateToIndexAndOffset(
-            index: index, offset: startOffset),
-      );
+      Future.delayed(duration).then((value) =>
+          controller.jumpToIndexAndOffset(index: index, offset: startOffset));
     }
     return index;
+  }
+
+  setSizes(BoxConstraints constraints) {
+    containerHeight = constraints.maxHeight * 0.25;
+    containerWidth = constraints.maxWidth * 0.30;
+    initialVerticalScrollOffset = -constraints.maxHeight * 0.355;
+    initialHorizontalScrollOffset = -constraints.maxWidth * 0.35;
+    if (isZoomedIn) {
+      upMovementDistance = -constraints.maxHeight * 0.605;
+      downMovementDistance = -constraints.maxHeight * 0.105;
+      rightMovementDistance = -constraints.maxWidth * 0.05;
+      leftMovementDistance = -constraints.maxWidth * 0.65;
+    } else {
+      // initialVerticalScrollOffset = -constraints.maxHeight * 0.105;
+      // initialHorizontalScrollOffset = -constraints.maxWidth * 0.1;
+      upMovementDistance = -constraints.maxHeight * 0.605;
+      downMovementDistance = -constraints.maxHeight * 0.105;
+      rightMovementDistance = -constraints.maxWidth * 0.05;
+      leftMovementDistance = -constraints.maxWidth * 0.65;
+    }
+  }
+
+  ///Row and columns goes from -2 to +2, being (0,0) the center
+  Widget _mouseRegion({required int row, required int column}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        isZoomedIn ? () {} : _onMouseRegionTap(row: row, column: column);
+      },
+      child: SizedBox(
+        height: containerHeight,
+        width: containerWidth,
+      ),
+    );
+  }
+
+  Widget _zoomRegion() {
+    return InteractiveViewer(
+      constrained: false,
+      panEnabled: false,
+      scaleEnabled: false,
+      child: Transform.translate(
+        offset: Offset(
+            -(initialHorizontalScrollOffset ?? 0) - (containerWidth ?? 0) * 2,
+            -(initialVerticalScrollOffset ?? 0) - (containerHeight ?? 0) * 2),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                _mouseRegion(column: -2, row: -2),
+                _mouseRegion(column: -1, row: -2),
+                _mouseRegion(column: 0, row: -2),
+                _mouseRegion(column: 1, row: -2),
+                _mouseRegion(column: 2, row: -2),
+              ],
+            ),
+            Row(
+              children: [
+                _mouseRegion(column: -2, row: -1),
+                _mouseRegion(column: -1, row: -1),
+                _mouseRegion(column: 0, row: -1),
+                _mouseRegion(column: 1, row: -1),
+                _mouseRegion(column: 2, row: -1),
+              ],
+            ),
+            Row(
+              children: [
+                _mouseRegion(column: -2, row: 0),
+                _mouseRegion(column: -1, row: 0),
+                _mouseRegion(column: 0, row: 0),
+                _mouseRegion(column: 1, row: 0),
+                _mouseRegion(column: 2, row: 0),
+              ],
+            ),
+            Row(
+              children: [
+                _mouseRegion(column: -2, row: 1),
+                _mouseRegion(column: -1, row: 1),
+                _mouseRegion(column: 0, row: 1),
+                _mouseRegion(column: 1, row: 1),
+                _mouseRegion(column: 2, row: 1),
+              ],
+            ),
+            Row(
+              children: [
+                _mouseRegion(column: -2, row: 2),
+                _mouseRegion(column: -1, row: 2),
+                _mouseRegion(column: 0, row: 2),
+                _mouseRegion(column: 1, row: 2),
+                _mouseRegion(column: 2, row: 2),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onMouseRegionTap({required int row, required int column}) async {
+    _horizontalScroll(column);
+    _verticalScroll(row);
+    _animationController.forward();
+    isZoomedIn = true;
+  }
+
+  void _horizontalScroll(int column) {
+    switch (column) {
+      case -2:
+        //Izquierda X2
+        _traslateLeft(isDoubled: true);
+        break;
+      case -1:
+        _traslateLeft();
+        //Izquierda X1
+        break;
+      case 0:
+        return;
+      case 1:
+        //DERECHA X1
+        _traslateRight(isDoubled: false);
+        break;
+      case 2:
+        //DERECHA X2
+        _traslateRight(isDoubled: true);
+        break;
+      default:
+        return;
+    }
+  }
+
+  _traslateRight({bool isDoubled = false}) async {
+    horizontalController
+        .animateToWithSameOriginIndex(
+            rightMovementDistance! * (isDoubled ? -5 : 1),
+            duration: const Duration(milliseconds: 500))
+        .then((value) => flag = true);
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+        horizontalController.jumpToIndexAndOffset(
+            index: horizontalIndex, offset: initialHorizontalScrollOffset!));
+    horizontalIndex += isDoubled ? 2 : 1;
+  }
+
+  _traslateLeft({bool isDoubled = false}) async {
+    horizontalController
+        .animateToWithSameOriginIndex(
+            leftMovementDistance! * (isDoubled ? 1.46 : 1),
+            duration: const Duration(milliseconds: 500))
+        .then((value) => flag = true);
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+        horizontalController.jumpToIndexAndOffset(
+            index: horizontalIndex, offset: initialHorizontalScrollOffset!));
+    horizontalIndex -= isDoubled ? 2 : 1;
+  }
+
+  void _verticalScroll(int row) async {
+    switch (row) {
+      case -2:
+        //ARRIBA X2
+        _traslateUp(isDoubled: true);
+        break;
+      case -1:
+        //ARRIBA X1
+        _traslateUp();
+        break;
+      case 0:
+        return;
+      //ABAJO X1
+      case 1:
+        _traslateDown();
+        break;
+      case 2:
+        //ABAJO X2
+        _traslateDown(isDoubled: true);
+        break;
+      default:
+        return;
+    }
+  }
+
+  _traslateDown({bool isDoubled = false}) async {
+    verticalController
+        .animateToWithSameOriginIndex(
+            downMovementDistance! * (isDoubled ? -1.38 : 1),
+            duration: const Duration(milliseconds: 500))
+        .then((value) => flag = true);
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+        verticalController.jumpToIndexAndOffset(
+            index: verticalIndex, offset: initialVerticalScrollOffset!));
+    verticalIndex += isDoubled ? 2 : 1;
+  }
+
+  _traslateUp({bool isDoubled = false}) async {
+    verticalController
+        .animateToWithSameOriginIndex(
+            upMovementDistance! * (isDoubled ? 1.412 : 1),
+            duration: const Duration(milliseconds: 500))
+        .then((value) => flag = true);
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+        verticalController.jumpToIndexAndOffset(
+            index: verticalIndex, offset: initialVerticalScrollOffset!));
+    verticalIndex -= isDoubled ? 2 : 1;
+  }
+
+  void _zoomOut() {
+    _animationController.reverse();
+    isZoomedIn = false;
   }
 }

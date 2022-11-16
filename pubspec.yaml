@@ -43,6 +43,7 @@ dependencies:
   dio: ^4.0.0
   dio_http_cache: ^0.3.0
   indexed_list_view: ^2.0.2
+  transparent_pointer: ^1.0.0
        
 
 dev_dependencies:

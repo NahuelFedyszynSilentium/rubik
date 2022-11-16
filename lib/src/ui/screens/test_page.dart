@@ -14,8 +14,6 @@ class TestPage extends StatefulWidget {
 }
 
 class TestPageState extends State<TestPage> {
-  final ScrollController _controller = ScrollController();
-
   late IndexedScrollController verticalController;
   late IndexedScrollController horizontalController;
   late double _cardHeight;
@@ -42,7 +40,6 @@ class TestPageState extends State<TestPage> {
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
   }
 
   @override

@@ -25,6 +25,8 @@ class TestPageState extends State<TestPage> {
   @override
   void initState() {
     super.initState();
+    buildSizes = true;
+    isZoomedIn = false;
   }
 
   @override
@@ -33,28 +35,54 @@ class TestPageState extends State<TestPage> {
     _controller.dispose();
   }
 
+  bool? buildSizes;
+  bool? isZoomedIn;
+  double? containerHeight;
+  double? containerWidth;
+  double? initialVerticalScrollOffset;
+  double? initialHorizontalScrollOffset;
+  double? upMovementDistance;
+  double? downMovementDistance;
+  double? rightMovementDistance;
+  double? leftMovementDistance;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Scaffold(
-      body: _content(),
-    ));
+      child: Scaffold(
+          appBar: AppBar(),
+          body: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            if (buildSizes != null && buildSizes!) setSizes(constraints);
+            return _content(constraints);
+          })),
+    );
   }
 
-  _child(int i, int j) {
+  _child(int i, int j, BoxConstraints constraints) {
     // double colorValue = Random().nextDouble() * 0xFFFFFF.toInt();
     return Padding(
       padding: const EdgeInsets.all(10.0),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        color: Colors.grey.withOpacity(1.0),
-        child: Center(
-          // Cambiar el child para probar con imágenes
-          child: Text(
-            "($i,$j)",
-            style: const TextStyle(color: Colors.black),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            setSizes(constraints);
+            buildSizes = false;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+          height: containerHeight,
+          color: Colors.grey.withOpacity(1.0),
+          child: Center(
+            // Cambiar el child para probar con imágenes
+            child: Text(
+              "($i,$j)",
+              style: const TextStyle(color: Colors.black),
+            ),
+            // child: Image.network(itemList[Random().nextInt(5)])
           ),
-          // child: Image.network(itemList[Random().nextInt(5)])
         ),
       ),
     );
@@ -66,14 +94,17 @@ class TestPageState extends State<TestPage> {
   var verticalIndex = 0;
   var horizontalIndex = 0;
 
-  _content() {
+  _content(BoxConstraints constraints) {
     var controller = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.height * 0.07);
+        initialScrollOffset: initialVerticalScrollOffset!);
     var controller2 = IndexedScrollController(
-        initialScrollOffset: -MediaQuery.of(context).size.width * 0.1);
+        initialScrollOffset: initialHorizontalScrollOffset!);
+
+    // if (isZoomedIn!) {
+    //   adjust(controller, 100);
+    // }
 
     return GestureDetector(
-      onPanEnd: (details) => {flag = true},
       onPanUpdate: (details) {
         // Swiping in up direction.
         int sensitivity = 2;
@@ -82,8 +113,8 @@ class TestPageState extends State<TestPage> {
             SwipeDirection.up,
             verticalIndex,
             controller,
-            -MediaQuery.of(context).size.height * 0.90,
-            -MediaQuery.of(context).size.height * 0.07,
+            upMovementDistance!,
+            initialVerticalScrollOffset!,
           );
         }
 
@@ -93,8 +124,8 @@ class TestPageState extends State<TestPage> {
             SwipeDirection.down,
             verticalIndex,
             controller,
-            MediaQuery.of(context).size.height * 0.75,
-            -MediaQuery.of(context).size.height * 0.07,
+            downMovementDistance!,
+            initialVerticalScrollOffset!,
           );
         }
 
@@ -104,8 +135,8 @@ class TestPageState extends State<TestPage> {
             SwipeDirection.right,
             horizontalIndex,
             controller2,
-            MediaQuery.of(context).size.width * 0.70,
-            -MediaQuery.of(context).size.width * 0.1,
+            rightMovementDistance!,
+            initialHorizontalScrollOffset!,
           );
         }
 
@@ -115,8 +146,8 @@ class TestPageState extends State<TestPage> {
             SwipeDirection.left,
             horizontalIndex,
             controller2,
-            -MediaQuery.of(context).size.width * 0.90,
-            -MediaQuery.of(context).size.width * 0.1,
+            leftMovementDistance!,
+            initialHorizontalScrollOffset!,
           );
         }
       },
@@ -125,11 +156,11 @@ class TestPageState extends State<TestPage> {
         physics: const NeverScrollableScrollPhysics(),
         controller: controller2,
         itemBuilder: (context, i) => SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
+          width: containerWidth,
           child: IndexedListView.builder(
             controller: controller,
             physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, j) => _child(i, j),
+            itemBuilder: (context, j) => _child(i, j, constraints),
           ),
         ),
       ),
@@ -159,16 +190,43 @@ class TestPageState extends State<TestPage> {
           break;
       }
       flag = false;
-
       //Muevo los renderizados con animación
-      controller.animateToWithSameOriginIndex(moovingOffset,
-          duration: duration);
+      controller
+          .animateToWithSameOriginIndex(moovingOffset, duration: duration)
+          .then((value) => flag = true);
+
       //Después muevo el resto de listas, sin animación
-      Future.delayed(duration).then(
-        (value) => controller.animateToIndexAndOffset(
-            index: index, offset: startOffset),
-      );
+      Future.delayed(duration).then((value) =>
+          controller.jumpToIndexAndOffset(index: index, offset: startOffset));
     }
     return index;
   }
+
+  setSizes(BoxConstraints constraints) {
+    if (!isZoomedIn!) {
+      containerHeight = constraints.maxHeight * 0.25;
+      containerWidth = constraints.maxWidth * 0.30;
+      initialVerticalScrollOffset = -constraints.maxHeight * 0.355;
+      initialHorizontalScrollOffset = -constraints.maxWidth * 0.35;
+      upMovementDistance = -constraints.maxHeight * 0.635;
+      downMovementDistance = -constraints.maxHeight * 0.075;
+      rightMovementDistance = -constraints.maxWidth * 0.05;
+      leftMovementDistance = -constraints.maxWidth * 0.65;
+    } else {
+      containerHeight = constraints.maxHeight * 0.75;
+      containerWidth = constraints.maxWidth * 0.80;
+      initialVerticalScrollOffset = -constraints.maxHeight * 0.105;
+      initialHorizontalScrollOffset = -constraints.maxWidth * 0.1;
+      upMovementDistance = -constraints.maxHeight * 0.88;
+      downMovementDistance = constraints.maxHeight * 0.68;
+      rightMovementDistance = constraints.maxWidth * 0.7;
+      leftMovementDistance = -constraints.maxWidth * 0.9;
+    }
+    isZoomedIn = !isZoomedIn!;
+  }
+
+  // adjust(IndexedScrollController controller, double moovingOffset) {
+  //   var duration = const Duration(milliseconds: 400);
+  //   controller.animateToWithSameOriginIndex(moovingOffset, duration: duration);
+  // }
 }

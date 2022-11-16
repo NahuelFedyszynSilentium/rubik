@@ -1,4 +1,3 @@
-import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -14,16 +13,7 @@ class TestPage extends StatefulWidget {
 }
 
 class TestPageState extends State<TestPage> {
-  late IndexedScrollController verticalController;
-  late IndexedScrollController horizontalController;
-  late double _cardHeight;
-  late double _cardWidth;
-  late BoxConstraints _viewportConstraints;
-  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
-  bool _flag = true;
-  int _verticalIndex = 0;
-  int _horizontalIndex = 0;
-
+  final ScrollController _controller = ScrollController();
   List<String> itemList = [
     "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
     "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
@@ -35,126 +25,147 @@ class TestPageState extends State<TestPage> {
   @override
   void initState() {
     super.initState();
+    buildSizes = true;
+    isZoomedIn = false;
   }
 
   @override
   void dispose() {
     super.dispose();
+    _controller.dispose();
   }
+
+  bool? buildSizes;
+  bool? isZoomedIn;
+  double? containerHeight;
+  double? containerWidth;
+  double? initialVerticalScrollOffset;
+  double? initialHorizontalScrollOffset;
+  double? upMovementDistance;
+  double? downMovementDistance;
+  double? rightMovementDistance;
+  double? leftMovementDistance;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(),
-        body: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            _calculateValues(constraints);
-            return _content();
-          },
-        ),
-      ),
+          appBar: AppBar(),
+          body: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            if (buildSizes != null && buildSizes!) setSizes(constraints);
+            return _content(constraints);
+          })),
     );
   }
 
-  void _calculateValues(BoxConstraints constraints) {
-    _cardHeight = constraints.maxHeight * 0.25;
-    _cardWidth = constraints.maxWidth * 0.25;
-    _viewportConstraints = constraints;
-    horizontalController = IndexedScrollController(
-        keepScrollOffset: true, initialScrollOffset: _cardWidth / 2);
-    verticalController = IndexedScrollController(
-        keepScrollOffset: true, initialScrollOffset: _cardHeight / 2);
-  }
-
-  _content() {
-    return GestureDetector(
-      onPanUpdate: _onPanUpdate,
-      // onHorizontalDragUpdate: _onHorizontalDragUpdate,
-      // onHorizontalDragDown: (details) => {_flag = true},
-      // onVerticalDragUpdate: _onVerticalDragUpdate,
-      // onVerticalDragEnd: (details) => {_flag = true},
-      child: IndexedListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        controller: horizontalController,
-        itemBuilder: (context, i) => SizedBox(
-          width: _cardWidth,
-          child: IndexedListView.builder(
-            controller: verticalController,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, j) => _card(i, j),
+  _child(int i, int j, BoxConstraints constraints) {
+    // double colorValue = Random().nextDouble() * 0xFFFFFF.toInt();
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            setSizes(constraints);
+            buildSizes = false;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+          height: containerHeight,
+          color: Colors.grey.withOpacity(1.0),
+          child: Center(
+            // Cambiar el child para probar con imágenes
+            child: Text(
+              "($i,$j)",
+              style: const TextStyle(color: Colors.black),
+            ),
+            // child: Image.network(itemList[Random().nextInt(5)])
           ),
         ),
       ),
     );
   }
 
-  _card(int i, int j) {
-    return Container(
-      decoration: BoxDecoration(border: Border.all(color: Colors.red)),
-      height: _cardHeight,
-      child: Container(
-        margin: const EdgeInsets.all(3),
-        height: double.infinity,
-        width: double.infinity,
-        color: Colors.grey.withOpacity(1.0),
-        alignment: Alignment.center,
-        child: Text(
-          "($i,$j)",
-          style: const TextStyle(color: Colors.black),
+  //Para que se ejecute la accion de swipear una vez, se desabilita al ejecutarse y se rehabilita al terminar el gesto
+  bool flag = true;
+
+  var verticalIndex = 0;
+  var horizontalIndex = 0;
+
+  _content(BoxConstraints constraints) {
+    var controller = IndexedScrollController(
+        initialScrollOffset: initialVerticalScrollOffset!);
+    var controller2 = IndexedScrollController(
+        initialScrollOffset: initialHorizontalScrollOffset!);
+
+    // if (isZoomedIn!) {
+    //   adjust(controller, 100);
+    // }
+
+    return GestureDetector(
+      onPanUpdate: (details) {
+        // Swiping in up direction.
+        int sensitivity = 2;
+        if (details.delta.dy > sensitivity) {
+          verticalIndex = swipeAction(
+            SwipeDirection.up,
+            verticalIndex,
+            controller,
+            upMovementDistance!,
+            initialVerticalScrollOffset!,
+          );
+        }
+
+        // Swiping in down direction.
+        if (details.delta.dy < -sensitivity) {
+          verticalIndex = swipeAction(
+            SwipeDirection.down,
+            verticalIndex,
+            controller,
+            downMovementDistance!,
+            initialVerticalScrollOffset!,
+          );
+        }
+
+        // Swiping in right direction.
+        if (details.delta.dx < -sensitivity) {
+          horizontalIndex = swipeAction(
+            SwipeDirection.right,
+            horizontalIndex,
+            controller2,
+            rightMovementDistance!,
+            initialHorizontalScrollOffset!,
+          );
+        }
+
+        // Swiping in left direction.
+        if (details.delta.dx > sensitivity) {
+          horizontalIndex = swipeAction(
+            SwipeDirection.left,
+            horizontalIndex,
+            controller2,
+            leftMovementDistance!,
+            initialHorizontalScrollOffset!,
+          );
+        }
+      },
+      child: IndexedListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        controller: controller2,
+        itemBuilder: (context, i) => SizedBox(
+          width: containerWidth,
+          child: IndexedListView.builder(
+            controller: controller,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, j) => _child(i, j, constraints),
+          ),
         ),
       ),
     );
   }
-
-  // void _onHorizontalDragUpdate(DragUpdateDetails details) {
-  //   if (details.primaryDelta != null && details.primaryDelta! > 0) {
-  //     //Arrastre hacia la izquierda
-  //     _horizontalIndex = swipeAction(
-  //       SwipeDirection.left,
-  //       _horizontalIndex,
-  //       horizontalController,
-  //       -(_cardWidth / 2),
-  //       -(_cardWidth / 2),
-  //     );
-  //   } else if (details.primaryDelta != null && details.primaryDelta! < 0) {
-  //     //Arrastre hacia la derecha
-  //     _horizontalIndex = swipeAction(
-  //       SwipeDirection.right,
-  //       _horizontalIndex,
-  //       horizontalController,
-  //       (_cardWidth / 2),
-  //       -(_cardWidth / 2),
-  //     );
-  //   } else {
-  //     return;
-  //   }
-  // }
-
-  // void _onVerticalDragUpdate(DragUpdateDetails details) {
-  //   if (details.primaryDelta != null && details.primaryDelta! > 0) {
-  //     //Arrastre hacia arriba
-  //     _verticalIndex = swipeAction(
-  //       SwipeDirection.up,
-  //       _verticalIndex,
-  //       verticalController,
-  //       -(_cardHeight / 2),
-  //       -(_cardHeight / 2),
-  //     );
-  //   } else if (details.primaryDelta != null && details.primaryDelta! < 0) {
-  //     //Arrastre hacia abajo
-  //     _verticalIndex = swipeAction(
-  //       SwipeDirection.down,
-  //       _verticalIndex,
-  //       verticalController,
-  //       (_cardHeight / 2),
-  //       -(_cardHeight / 2),
-  //     );
-  //   } else {
-  //     return;
-  //   }
-  // }
 
   int swipeAction(
     SwipeDirection swipeDirection,
@@ -163,28 +174,26 @@ class TestPageState extends State<TestPage> {
     double moovingOffset,
     double startOffset,
   ) {
-    Duration duration = const Duration(milliseconds: 400);
+    var duration = const Duration(milliseconds: 400);
 
-    if (_flag) {
+    if (flag) {
       switch (swipeDirection) {
         case SwipeDirection.up:
         case SwipeDirection.left:
           index--;
           break;
         case SwipeDirection.down:
-          break;
         case SwipeDirection.right:
           index++;
           break;
         default:
           break;
       }
-
-      _flag = false;
+      flag = false;
       //Muevo los renderizados con animación
       controller
           .animateToWithSameOriginIndex(moovingOffset, duration: duration)
-          .then((value) => _flag = true);
+          .then((value) => flag = true);
 
       //Después muevo el resto de listas, sin animación
       Future.delayed(duration).then((value) =>
@@ -193,50 +202,31 @@ class TestPageState extends State<TestPage> {
     return index;
   }
 
-  _onPanUpdate(DragUpdateDetails details) {
-    // Swiping in up direction.
-    int sensitivity = 2;
-    if (details.delta.dy > sensitivity) {
-      _verticalIndex = swipeAction(
-        SwipeDirection.up,
-        _verticalIndex,
-        verticalController,
-        -(_cardHeight / 2),
-        _cardHeight / 2,
-      );
+  setSizes(BoxConstraints constraints) {
+    if (!isZoomedIn!) {
+      containerHeight = constraints.maxHeight * 0.25;
+      containerWidth = constraints.maxWidth * 0.30;
+      initialVerticalScrollOffset = -constraints.maxHeight * 0.355;
+      initialHorizontalScrollOffset = -constraints.maxWidth * 0.35;
+      upMovementDistance = -constraints.maxHeight * 0.635;
+      downMovementDistance = -constraints.maxHeight * 0.075;
+      rightMovementDistance = -constraints.maxWidth * 0.05;
+      leftMovementDistance = -constraints.maxWidth * 0.65;
+    } else {
+      containerHeight = constraints.maxHeight * 0.75;
+      containerWidth = constraints.maxWidth * 0.80;
+      initialVerticalScrollOffset = -constraints.maxHeight * 0.105;
+      initialHorizontalScrollOffset = -constraints.maxWidth * 0.1;
+      upMovementDistance = -constraints.maxHeight * 0.88;
+      downMovementDistance = constraints.maxHeight * 0.68;
+      rightMovementDistance = constraints.maxWidth * 0.7;
+      leftMovementDistance = -constraints.maxWidth * 0.9;
     }
-
-    // Swiping in down direction.
-    if (details.delta.dy < -sensitivity) {
-      _verticalIndex = swipeAction(
-        SwipeDirection.down,
-        _verticalIndex,
-        verticalController,
-        _cardHeight / 2,
-        -_cardHeight / 2,
-      );
-    }
-
-    // Swiping in right direction.
-    if (details.delta.dx < -sensitivity) {
-      _horizontalIndex = swipeAction(
-        SwipeDirection.right,
-        _horizontalIndex,
-        horizontalController,
-        _cardWidth / 2,
-        -_cardWidth / 2,
-      );
-    }
-
-    // Swiping in left direction.
-    if (details.delta.dx > sensitivity) {
-      _horizontalIndex = swipeAction(
-        SwipeDirection.left,
-        _horizontalIndex,
-        horizontalController,
-        -_cardWidth / 2,
-        _cardWidth / 2,
-      );
-    }
+    isZoomedIn = !isZoomedIn!;
   }
+
+  // adjust(IndexedScrollController controller, double moovingOffset) {
+  //   var duration = const Duration(milliseconds: 400);
+  //   controller.animateToWithSameOriginIndex(moovingOffset, duration: duration);
+  // }
 }

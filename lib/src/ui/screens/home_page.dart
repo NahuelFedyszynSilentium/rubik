@@ -27,7 +27,8 @@ class HomePage extends StatefulWidget {
   _HomePagePageState createState() => _HomePagePageState(args);
 }
 
-class _HomePagePageState extends StateMVC<HomePage> {
+class _HomePagePageState extends StateMVC<HomePage>
+    with TickerProviderStateMixin {
   late HomePageController _con;
   PageArgs? args;
   TransformationController _controller = TransformationController();

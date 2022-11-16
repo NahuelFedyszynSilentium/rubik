@@ -13,16 +13,7 @@ class TestPage extends StatefulWidget {
   TestPageState createState() => TestPageState();
 }
 
-class TestPageState extends State<TestPage> {
-  final ScrollController _controller = ScrollController();
-  List<String> itemList = [
-    "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
-    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
-    "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
-    "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
-    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
-    "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
-  ];
+class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
@@ -33,8 +24,25 @@ class TestPageState extends State<TestPage> {
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
   }
+
+  late final AnimationController _animationController = AnimationController(
+    duration: const Duration(milliseconds: 700),
+    vsync: this,
+  );
+  late final Animation<double> _animation = Tween(
+    begin: 1.0,
+    end: 2.75,
+  ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+  List<String> itemList = [
+    "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
+    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
+    "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
+    "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
+    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
+    "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
+  ];
 
   bool? buildSizes;
   bool isZoomedIn = false;
@@ -75,82 +83,75 @@ class TestPageState extends State<TestPage> {
         initialScrollOffset: initialHorizontalScrollOffset!,
         initialIndex: horizontalIndex);
 
-    // if (isZoomedIn!) {
-    //   adjust(controller, 100);
-    // }
-
     return Stack(
       children: [
-        AnimatedScale(
-          scale: isZoomedIn ? 1 : 2.75,
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.easeInOut,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              // Swiping in up direction.
-              int sensitivity = 2;
-              if (details.delta.dy > sensitivity) {
-                verticalIndex = swipeAction(
-                  SwipeDirection.up,
-                  verticalIndex,
-                  verticalController,
-                  upMovementDistance!,
-                  initialVerticalScrollOffset!,
-                );
-              }
+        _zoomRegion(),
+        TransparentPointer(
+          child: ScaleTransition(
+            scale: _animation,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onLongPress: _zoomOut,
+              onPanUpdate: (details) {
+                // Swiping in up direction.
+                int sensitivity = 2;
+                if (details.delta.dy > sensitivity) {
+                  verticalIndex = swipeAction(
+                    SwipeDirection.up,
+                    verticalIndex,
+                    verticalController,
+                    upMovementDistance!,
+                    initialVerticalScrollOffset!,
+                  );
+                }
 
-              // Swiping in down direction.
-              if (details.delta.dy < -sensitivity) {
-                verticalIndex = swipeAction(
-                  SwipeDirection.down,
-                  verticalIndex,
-                  verticalController,
-                  downMovementDistance!,
-                  initialVerticalScrollOffset!,
-                );
-              }
+                // Swiping in down direction.
+                if (details.delta.dy < -sensitivity) {
+                  verticalIndex = swipeAction(
+                    SwipeDirection.down,
+                    verticalIndex,
+                    verticalController,
+                    downMovementDistance!,
+                    initialVerticalScrollOffset!,
+                  );
+                }
 
-              // Swiping in right direction.
-              if (details.delta.dx < -sensitivity) {
-                horizontalIndex = swipeAction(
-                  SwipeDirection.right,
-                  horizontalIndex,
-                  horizontalController,
-                  rightMovementDistance!,
-                  initialHorizontalScrollOffset!,
-                );
-              }
+                // Swiping in right direction.
+                if (details.delta.dx < -sensitivity) {
+                  horizontalIndex = swipeAction(
+                    SwipeDirection.right,
+                    horizontalIndex,
+                    horizontalController,
+                    rightMovementDistance!,
+                    initialHorizontalScrollOffset!,
+                  );
+                }
 
-              // Swiping in left direction.
-              if (details.delta.dx > sensitivity) {
-                horizontalIndex = swipeAction(
-                  SwipeDirection.left,
-                  horizontalIndex,
-                  horizontalController,
-                  leftMovementDistance!,
-                  initialHorizontalScrollOffset!,
-                );
-              }
-            },
-            child: IndexedListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              controller: horizontalController,
-              itemBuilder: (context, i) => SizedBox(
-                width: containerWidth,
-                child: IndexedListView.builder(
-                  controller: verticalController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, j) => _child(i, j, constraints),
+                // Swiping in left direction.
+                if (details.delta.dx > sensitivity) {
+                  horizontalIndex = swipeAction(
+                    SwipeDirection.left,
+                    horizontalIndex,
+                    horizontalController,
+                    leftMovementDistance!,
+                    initialHorizontalScrollOffset!,
+                  );
+                }
+              },
+              child: IndexedListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                controller: horizontalController,
+                itemBuilder: (context, i) => SizedBox(
+                  width: containerWidth,
+                  child: IndexedListView.builder(
+                    controller: verticalController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, j) => _child(i, j, constraints),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        TransparentPointer(
-          child: Visibility(
-            visible: isZoomedIn,
-            child: _zoomRegion(),
           ),
         ),
       ],
@@ -158,22 +159,18 @@ class TestPageState extends State<TestPage> {
   }
 
   _child(int i, int j, BoxConstraints constraints) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _onZoom,
-      child: SizedBox(
-        height: containerHeight,
-        child: Container(
-          margin: const EdgeInsets.all(5),
-          alignment: Alignment.center,
-          color: Colors.grey.withOpacity(1.0),
-          // Cambiar el child para probar con imágenes
-          child: Text(
-            "($i,$j)",
-            style: const TextStyle(color: Colors.black),
-          ),
-          // child: Image.network(itemList[Random().nextInt(5)])
+    return SizedBox(
+      height: containerHeight,
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        alignment: Alignment.center,
+        color: Colors.grey.withOpacity(1.0),
+        // Cambiar el child para probar con imágenes
+        child: Text(
+          "($i,$j)",
+          style: const TextStyle(color: Colors.black),
         ),
+        // child: Image.network(itemList[Random().nextInt(5)])
       ),
     );
   }
@@ -233,29 +230,16 @@ class TestPageState extends State<TestPage> {
     }
   }
 
-  _onZoom() {
-    setState(() {
-      isZoomedIn = !isZoomedIn;
-    });
-  }
-
-  // adjust(IndexedScrollController controller, double moovingOffset) {
-  //   var duration = const Duration(milliseconds: 400);
-  //   controller.animateToWithSameOriginIndex(moovingOffset, duration: duration);
-  // }
-
   ///Row and columns goes from -2 to +2, being (0,0) the center
   Widget _mouseRegion({required int row, required int column}) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
-        _onMouseRegionTap(row: row, column: column);
+        isZoomedIn ? () {} : _onMouseRegionTap(row: row, column: column);
       },
-      child: Container(
+      child: SizedBox(
         height: containerHeight,
         width: containerWidth,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue, width: 1),
-        ),
       ),
     );
   }
@@ -325,9 +309,8 @@ class TestPageState extends State<TestPage> {
   void _onMouseRegionTap({required int row, required int column}) async {
     _horizontalScroll(column);
     _verticalScroll(row);
-    // setState(() {
-    //   isZoomedIn = false;
-    // });
+    _animationController.forward();
+    isZoomedIn = true;
   }
 
   void _horizontalScroll(int column) {
@@ -359,9 +342,9 @@ class TestPageState extends State<TestPage> {
     horizontalController
         .animateToWithSameOriginIndex(
             rightMovementDistance! * (isDoubled ? -5 : 1),
-            duration: const Duration(milliseconds: 1000))
+            duration: const Duration(milliseconds: 500))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 1000)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
         horizontalController.jumpToIndexAndOffset(
             index: horizontalIndex, offset: initialHorizontalScrollOffset!));
     horizontalIndex += isDoubled ? 2 : 1;
@@ -371,9 +354,9 @@ class TestPageState extends State<TestPage> {
     horizontalController
         .animateToWithSameOriginIndex(
             leftMovementDistance! * (isDoubled ? 1.46 : 1),
-            duration: const Duration(milliseconds: 1000))
+            duration: const Duration(milliseconds: 500))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 1000)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
         horizontalController.jumpToIndexAndOffset(
             index: horizontalIndex, offset: initialHorizontalScrollOffset!));
     horizontalIndex -= isDoubled ? 2 : 1;
@@ -408,9 +391,9 @@ class TestPageState extends State<TestPage> {
     verticalController
         .animateToWithSameOriginIndex(
             downMovementDistance! * (isDoubled ? -1.38 : 1),
-            duration: const Duration(milliseconds: 1000))
+            duration: const Duration(milliseconds: 500))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 1000)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
         verticalController.jumpToIndexAndOffset(
             index: verticalIndex, offset: initialVerticalScrollOffset!));
     verticalIndex += isDoubled ? 2 : 1;
@@ -420,11 +403,16 @@ class TestPageState extends State<TestPage> {
     verticalController
         .animateToWithSameOriginIndex(
             upMovementDistance! * (isDoubled ? 1.412 : 1),
-            duration: const Duration(milliseconds: 1000))
+            duration: const Duration(milliseconds: 500))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 1000)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
         verticalController.jumpToIndexAndOffset(
             index: verticalIndex, offset: initialVerticalScrollOffset!));
     verticalIndex -= isDoubled ? 2 : 1;
+  }
+
+  void _zoomOut() {
+    _animationController.reverse();
+    isZoomedIn = false;
   }
 }

@@ -325,9 +325,9 @@ class TestPageState extends State<TestPage> {
   void _onMouseRegionTap({required int row, required int column}) async {
     _horizontalScroll(column);
     _verticalScroll(row);
-    setState(() {
-      isZoomedIn = false;
-    });
+    // setState(() {
+    //   isZoomedIn = false;
+    // });
   }
 
   void _horizontalScroll(int column) {

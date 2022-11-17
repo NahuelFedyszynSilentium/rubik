@@ -273,8 +273,7 @@ class RubikComponentState extends State<RubikComponent>
             ? () {}
             : _onMouseRegionTap(row: row, column: column);
       },
-      child: Container(
-        color: Colors.grey,
+      child: SizedBox(
         height: containerHeight,
         width: containerWidth,
       ),

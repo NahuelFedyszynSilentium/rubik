@@ -79,7 +79,7 @@ class _MyHomePageState extends State<MyApp> {
       ),
       //theme: ThemeData(fontFamily: 'Sans'),
       title: 'Template',
-      home: const TestPage(),
+      home: RubikComponent(),
     );
   }
 

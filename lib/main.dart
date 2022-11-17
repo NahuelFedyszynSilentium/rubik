@@ -1,9 +1,12 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:rubik/src/providers/app_provider.dart';
 import 'package:rubik/src/ui/screens/test_page.dart';
+import 'package:transparent_pointer/transparent_pointer.dart';
 
 import 'src/enums/culture.dart';
 import 'src/managers/data_manager.dart';
@@ -44,6 +47,7 @@ class MyApp extends StatefulWidget {
 
 class _MyHomePageState extends State<MyApp> {
   late Locale _locale = const Locale("es", '');
+  RubikController _controller = RubikController();
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +83,32 @@ class _MyHomePageState extends State<MyApp> {
       ),
       //theme: ThemeData(fontFamily: 'Sans'),
       title: 'Template',
-      home: RubikComponent(),
+      home: _getRubik(),
+    );
+  }
+
+  Widget _getRubik() {
+    List<Widget> _test = [];
+    for (int i = 0; i < 255; i++) {
+      _test.add(
+        GestureDetector(
+          onTap: () {
+            log(_controller.indexOfCenter.toString());
+          },
+          child: Container(
+            alignment: Alignment.center,
+            height: double.infinity,
+            width: double.infinity,
+            color: Colors.red,
+            margin: const EdgeInsets.all(5),
+            child: Text(i.toString()),
+          ),
+        ),
+      );
+    }
+    return RubikComponent(
+      itemList: _test,
+      rubikController: _controller,
     );
   }
 

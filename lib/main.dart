@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:rubik/src/providers/app_provider.dart';
 import 'package:rubik/src/ui/screens/test_page.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:video_player/video_player.dart';
 
 import 'src/enums/culture.dart';
 import 'src/managers/data_manager.dart';
@@ -48,6 +49,22 @@ class MyApp extends StatefulWidget {
 class _MyHomePageState extends State<MyApp> {
   late Locale _locale = const Locale("es", '');
   RubikController _controller = RubikController();
+  late List<VideoPlayerController> videoControllerList = [];
+
+  @override
+  void initState() {
+    for (var i = 0; i < 10000; i++) {
+      videoControllerList.add(VideoPlayerController.network(
+        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      )..initialize().then((_) {
+          // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+          setState(() {
+            //videoControllerList[i].play();
+          });
+        }));
+    }
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,25 +100,29 @@ class _MyHomePageState extends State<MyApp> {
       ),
       //theme: ThemeData(fontFamily: 'Sans'),
       title: 'Template',
-      home: _getRubik(),
+      home: Scaffold(
+        appBar: AppBar(),
+        body: _getRubik(),
+      ),
     );
   }
 
   Widget _getRubik() {
     List<Widget> _test = [];
-    for (int i = 0; i < 255; i++) {
+    for (int i = 0; i < 10000; i++) {
       _test.add(
         GestureDetector(
           onTap: () {
-            log(_controller.indexOfCenter.toString());
+            log(i.toString());
+            // log(_controller.indexOfCenter.toString());
           },
           child: Container(
             alignment: Alignment.center,
             height: double.infinity,
             width: double.infinity,
-            color: Colors.red,
+            color: Colors.blueGrey,
             margin: const EdgeInsets.all(5),
-            child: Text(i.toString()),
+            child: VideoPlayer(videoControllerList[i]),
           ),
         ),
       );

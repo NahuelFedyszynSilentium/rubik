@@ -1,10 +1,6 @@
-import 'dart:developer';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:indexed_list_view/indexed_list_view.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
-import 'package:video_player/video_player.dart';
 
 enum SwipeDirection { up, down, left, right }
 

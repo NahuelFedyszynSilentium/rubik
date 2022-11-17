@@ -12,20 +12,20 @@ class RubikComponent extends StatefulWidget {
   RubikComponent({
     Key? key,
     this.rubikController,
-    // required this.itemList,
+    required this.itemList,
     //TODO: Quitar lista hardcodeada
-    this.itemList = const [
-      "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
-      "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
-      "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
-      "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
-      "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
-    ],
+    // this.itemList = const [
+    //   "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
+    //   "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
+    //   "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
+    //   "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
+    //   "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
+    // ],
   }) : super(key: key);
 
   RubikController? rubikController;
 
-  List<String> itemList;
+  List<Widget> itemList;
   // List<String> videosList = [
   //   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
@@ -211,19 +211,13 @@ class RubikComponentState extends State<RubikComponent>
   }
 
   _child(int i, int j, BoxConstraints constraints) {
-    return Container(
-      height: containerHeight,
-      width: containerWidth,
-      // margin: const EdgeInsets.all(5),
-      alignment: Alignment.center,
-      color: Colors.grey.withOpacity(1.0),
-      // Cambiar el child para probar con imágenes
-      child: CachedNetworkImage(
-        imageUrl:
-            widget.itemList[getSpiralIndex(-j, i, widget.itemList.length)],
-        fit: BoxFit.fill,
+    return AbsorbPointer(
+      absorbing: !_rubikController.isZoomedIn,
+      child: SizedBox(
+        height: containerHeight,
+        width: containerWidth,
+        child: widget.itemList[getSpiralIndex(-j, i, widget.itemList.length)],
       ),
-      // child: Image.network(itemList[Random().nextInt(5)])
     );
   }
 
@@ -276,13 +270,15 @@ class RubikComponentState extends State<RubikComponent>
   ///Row and columns goes from -2 to +2, being (0,0) the center
   Widget _mouseRegion({required int row, required int column}) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.translucent,
+      excludeFromSemantics: true,
       onTap: () {
         _rubikController.isZoomedIn
             ? () {}
             : _onMouseRegionTap(row: row, column: column);
       },
-      child: SizedBox(
+      child: Container(
+        color: Colors.grey,
         height: containerHeight,
         width: containerWidth,
       ),
@@ -361,6 +357,7 @@ class RubikComponentState extends State<RubikComponent>
     await _animationController.forward();
     isZoomingIn = false;
     _rubikController._isZoomedIn = true;
+    setState(() {});
   }
 
   void _horizontalScroll(int column) {
@@ -461,9 +458,10 @@ class RubikComponentState extends State<RubikComponent>
     verticalIndex -= isDoubled ? 2 : 1;
   }
 
-  void _zoomOut() {
-    _animationController.reverse();
+  void _zoomOut() async {
     _rubikController._isZoomedIn = false;
+    await _animationController.reverse();
+    setState(() {});
   }
 
   int getSpiralIndex(int x, int y, int listMax) {

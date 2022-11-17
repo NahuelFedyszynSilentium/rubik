@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -8,52 +8,24 @@ import 'package:video_player/video_player.dart';
 
 enum SwipeDirection { up, down, left, right }
 
-class TestPage extends StatefulWidget {
-  const TestPage({Key? key}) : super(key: key);
+class RubikComponent extends StatefulWidget {
+  RubikComponent({
+    Key? key,
+    this.rubikController,
+    // required this.itemList,
+    //TODO: Quitar lista hardcodeada
+    this.itemList = const [
+      "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
+      "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
+      "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
+      "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
+      "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
+    ],
+  }) : super(key: key);
 
-  @override
-  TestPageState createState() => TestPageState();
-}
+  RubikController? rubikController;
 
-class TestPageState extends State<TestPage> with TickerProviderStateMixin {
-  @override
-  void initState() {
-    super.initState();
-    buildSizes = true;
-    isZoomedIn = false;
-    // for (var i = 0; i < videosList.length; i++) {
-    //   videoControllerList.add(VideoPlayerController.network(videosList[i])
-    //     ..initialize().then((_) {
-    //       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
-    //       setState(() {
-    //         //videoControllerList[i].play();
-    //       });
-    //     }));
-    // }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  late final AnimationController _animationController = AnimationController(
-    duration: const Duration(milliseconds: 700),
-    vsync: this,
-  );
-  late final Animation<double> _animation = Tween(
-    begin: 1.0,
-    end: 2.75,
-  ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
-  List<String> itemList = [
-    "https://i.pinimg.com/originals/ee/41/ef/ee41ef645eff8b6de1e173a252f855cd.jpg",
-    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
-    "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
-    "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
-    "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
-  ];
-  // late List<VideoPlayerController> videoControllerList = [];
+  List<String> itemList;
   // List<String> videosList = [
   //   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
@@ -66,8 +38,52 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
   // ];
 
+  @override
+  RubikComponentState createState() => RubikComponentState();
+}
+
+class RubikComponentState extends State<RubikComponent>
+    with TickerProviderStateMixin {
+  @override
+  void initState() {
+    super.initState();
+    _rubikController = widget.rubikController ?? RubikController();
+    _rubikController._getIndexOfCenter = _getIndexOfCenter;
+    buildSizes = true;
+    // for (var i = 0; i < videosList.length; i++) {
+    //   videoControllerList.add(VideoPlayerController.network(videosList[i])
+    //     ..initialize().then((_) {
+    //       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+    //       setState(() {
+    //         //videoControllerList[i].play();
+    //       });
+    //     }));
+    // }
+  }
+
+  int _getIndexOfCenter() {
+    return getSpiralIndex(
+        verticalIndex, horizontalIndex, widget.itemList.length);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  late final AnimationController _animationController = AnimationController(
+    duration: const Duration(milliseconds: 600),
+    vsync: this,
+  );
+  late final Animation<double> _animation = Tween(
+    begin: 1.0,
+    end: 2.75,
+  ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+  // late List<VideoPlayerController> videoControllerList = [];
+
+  late RubikController _rubikController;
   bool? buildSizes;
-  bool isZoomedIn = false;
   double? containerHeight;
   double? containerWidth;
   double? initialVerticalScrollOffset;
@@ -182,35 +198,19 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   }
 
   _child(int i, int j, BoxConstraints constraints) {
-    return SizedBox(
+    return Container(
       height: containerHeight,
-      child: Container(
-        margin: const EdgeInsets.all(5),
-        alignment: Alignment.center,
-        color: Colors.grey.withOpacity(1.0),
-        // Cambiar el child para probar con imágenes
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            Text(
-              "($i,$j)",
-              style: const TextStyle(color: Colors.black),
-            ),
-            const SizedBox(height: 5),
-            Text("${getSpiralIndex(-j, i, 10000)}"),
-            const SizedBox(height: 5),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: constraints.maxHeight / 8),
-              child: CachedNetworkImage(
-                imageUrl: itemList[getSpiralIndex(-j, i, 5)],
-                fit: BoxFit.cover,
-              ),
-            ),
-          ],
-        ),
-        // child: Image.network(itemList[Random().nextInt(5)])
+      width: containerWidth,
+      // margin: const EdgeInsets.all(5),
+      alignment: Alignment.center,
+      color: Colors.grey.withOpacity(1.0),
+      // Cambiar el child para probar con imágenes
+      child: CachedNetworkImage(
+        imageUrl:
+            widget.itemList[getSpiralIndex(-j, i, widget.itemList.length)],
+        fit: BoxFit.fill,
       ),
+      // child: Image.network(itemList[Random().nextInt(5)])
     );
   }
 
@@ -254,19 +254,10 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     containerWidth = constraints.maxWidth * 0.30;
     initialVerticalScrollOffset = -constraints.maxHeight * 0.355;
     initialHorizontalScrollOffset = -constraints.maxWidth * 0.35;
-    if (isZoomedIn) {
-      upMovementDistance = -constraints.maxHeight * 0.605;
-      downMovementDistance = -constraints.maxHeight * 0.105;
-      rightMovementDistance = -constraints.maxWidth * 0.05;
-      leftMovementDistance = -constraints.maxWidth * 0.65;
-    } else {
-      // initialVerticalScrollOffset = -constraints.maxHeight * 0.105;
-      // initialHorizontalScrollOffset = -constraints.maxWidth * 0.1;
-      upMovementDistance = -constraints.maxHeight * 0.655;
-      downMovementDistance = -constraints.maxHeight * 0.055;
-      rightMovementDistance = -constraints.maxWidth * 0.05;
-      leftMovementDistance = -constraints.maxWidth * 0.65;
-    }
+    upMovementDistance = -constraints.maxHeight * 0.655;
+    downMovementDistance = -constraints.maxHeight * 0.055;
+    rightMovementDistance = -constraints.maxWidth * 0.05;
+    leftMovementDistance = -constraints.maxWidth * 0.65;
   }
 
   ///Row and columns goes from -2 to +2, being (0,0) the center
@@ -274,7 +265,9 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        isZoomedIn ? () {} : _onMouseRegionTap(row: row, column: column);
+        _rubikController.isZoomedIn
+            ? () {}
+            : _onMouseRegionTap(row: row, column: column);
       },
       child: SizedBox(
         height: containerHeight,
@@ -354,7 +347,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     _verticalScroll(row);
     await _animationController.forward();
     isZoomingIn = false;
-    isZoomedIn = true;
+    _rubikController._isZoomedIn = true;
   }
 
   void _horizontalScroll(int column) {
@@ -386,9 +379,9 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     horizontalController
         .animateToWithSameOriginIndex(
             rightMovementDistance! * (isDoubled ? -5 : 1),
-            duration: const Duration(milliseconds: 500))
+            duration: const Duration(milliseconds: 600))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 600)).then((value) =>
         horizontalController.jumpToIndexAndOffset(
             index: horizontalIndex, offset: initialHorizontalScrollOffset!));
     horizontalIndex += isDoubled ? 2 : 1;
@@ -398,9 +391,9 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     horizontalController
         .animateToWithSameOriginIndex(
             leftMovementDistance! * (isDoubled ? 1.46 : 1),
-            duration: const Duration(milliseconds: 500))
+            duration: const Duration(milliseconds: 600))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 600)).then((value) =>
         horizontalController.jumpToIndexAndOffset(
             index: horizontalIndex, offset: initialHorizontalScrollOffset!));
     horizontalIndex -= isDoubled ? 2 : 1;
@@ -434,10 +427,10 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   _traslateDown({bool isDoubled = false}) async {
     verticalController
         .animateToWithSameOriginIndex(
-            downMovementDistance! * (isDoubled ? -1.38 : 1),
-            duration: const Duration(milliseconds: 500))
+            downMovementDistance! * (isDoubled ? -4.45 : 1),
+            duration: const Duration(milliseconds: 600))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 600)).then((value) =>
         verticalController.jumpToIndexAndOffset(
             index: verticalIndex, offset: initialVerticalScrollOffset!));
     verticalIndex += isDoubled ? 2 : 1;
@@ -446,10 +439,10 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   _traslateUp({bool isDoubled = false}) async {
     verticalController
         .animateToWithSameOriginIndex(
-            upMovementDistance! * (isDoubled ? 1.412 : 1),
-            duration: const Duration(milliseconds: 500))
+            upMovementDistance! * (isDoubled ? 1.46 : 1),
+            duration: const Duration(milliseconds: 600))
         .then((value) => flag = true);
-    Future.delayed(const Duration(milliseconds: 500)).then((value) =>
+    Future.delayed(const Duration(milliseconds: 600)).then((value) =>
         verticalController.jumpToIndexAndOffset(
             index: verticalIndex, offset: initialVerticalScrollOffset!));
     verticalIndex -= isDoubled ? 2 : 1;
@@ -457,10 +450,10 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
 
   void _zoomOut() {
     _animationController.reverse();
-    isZoomedIn = false;
+    _rubikController._isZoomedIn = false;
   }
 
-  getSpiralIndex(int x, int y, int listMax) {
+  int getSpiralIndex(int x, int y, int listMax) {
     // Algoritmo de https://superzhu.gitbooks.io/bigdata/content/algo/get_spiral_index_from_location.html
     int index = 0;
 
@@ -477,4 +470,13 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     }
     return index % listMax;
   }
+}
+
+class RubikController {
+  RubikController();
+  bool _isZoomedIn = false;
+  bool get isZoomedIn => _isZoomedIn;
+
+  int Function()? _getIndexOfCenter;
+  int get indexOfCenter => _getIndexOfCenter!();
 }

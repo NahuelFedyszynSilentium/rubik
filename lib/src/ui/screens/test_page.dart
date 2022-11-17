@@ -460,19 +460,19 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     isZoomedIn = false;
   }
 
-  getSpiralIndex(int X, int Y, int listMax) {
+  getSpiralIndex(int x, int y, int listMax) {
     // Algoritmo de https://superzhu.gitbooks.io/bigdata/content/algo/get_spiral_index_from_location.html
     int index = 0;
 
-    if (X * X >= Y * Y) {
-      index = 4 * X * X - X - Y;
-      if (X < Y) {
-        index = index - 2 * (X - Y);
+    if (x * x >= y * y) {
+      index = 4 * x * x - x - y;
+      if (x < y) {
+        index = index - 2 * (x - y);
       }
     } else {
-      index = 4 * Y * Y - X - Y;
-      if (X < Y) {
-        index = index + 2 * (X - Y);
+      index = 4 * y * y - x - y;
+      if (x < y) {
+        index = index + 2 * (x - y);
       }
     }
     return index % listMax;

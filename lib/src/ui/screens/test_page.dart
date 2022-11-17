@@ -1,8 +1,10 @@
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:indexed_list_view/indexed_list_view.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:video_player/video_player.dart';
 
 enum SwipeDirection { up, down, left, right }
 
@@ -19,6 +21,15 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     super.initState();
     buildSizes = true;
     isZoomedIn = false;
+    // for (var i = 0; i < videosList.length; i++) {
+    //   videoControllerList.add(VideoPlayerController.network(videosList[i])
+    //     ..initialize().then((_) {
+    //       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+    //       setState(() {
+    //         //videoControllerList[i].play();
+    //       });
+    //     }));
+    // }
   }
 
   @override
@@ -40,9 +51,20 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
     "https://www.wallpapertip.com/wmimgs/4-43331_adidas-shoes-wallpaper-adidas-shoes.jpg",
     "https://i.pinimg.com/originals/f1/6e/26/f16e26c0a1e849bb3b9ba8143dcae27f.jpg",
-    "https://i.pinimg.com/originals/01/0f/6a/010f6a821b7335cf0b928235b6ebd212.jpg",
     "https://i.pinimg.com/originals/00/e3/66/00e3665a1e04406410854083056d337c.png",
   ];
+  // late List<VideoPlayerController> videoControllerList = [];
+  // List<String> videosList = [
+  //   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+  //   "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+  // ];
 
   bool? buildSizes;
   bool isZoomedIn = false;
@@ -95,7 +117,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
               onLongPress: _zoomOut,
               onPanUpdate: (details) {
                 // Swiping in up direction.
-                int sensitivity = 2;
+                int sensitivity = 0;
                 if (details.delta.dy > sensitivity) {
                   verticalIndex = swipeAction(
                     SwipeDirection.up,
@@ -148,7 +170,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
                   child: IndexedListView.builder(
                     controller: verticalController,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, j) => _child(i, j, constraints),
+                    itemBuilder: (context, j) => _child(i, -j, constraints),
                   ),
                 ),
               ),
@@ -167,9 +189,25 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
         alignment: Alignment.center,
         color: Colors.grey.withOpacity(1.0),
         // Cambiar el child para probar con imágenes
-        child: Text(
-          "($i,$j)",
-          style: const TextStyle(color: Colors.black),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            Text(
+              "($i,$j)",
+              style: const TextStyle(color: Colors.black),
+            ),
+            const SizedBox(height: 5),
+            Text("${getSpiralIndex(-j, i, 10000)}"),
+            const SizedBox(height: 5),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: constraints.maxHeight / 8),
+              child: CachedNetworkImage(
+                imageUrl: itemList[getSpiralIndex(-j, i, 5)],
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
         ),
         // child: Image.network(itemList[Random().nextInt(5)])
       ),
@@ -212,7 +250,7 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   }
 
   setSizes(BoxConstraints constraints) {
-    containerHeight = constraints.maxHeight * 0.25;
+    containerHeight = constraints.maxHeight * 0.30;
     containerWidth = constraints.maxWidth * 0.30;
     initialVerticalScrollOffset = -constraints.maxHeight * 0.355;
     initialHorizontalScrollOffset = -constraints.maxWidth * 0.35;
@@ -224,8 +262,8 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
     } else {
       // initialVerticalScrollOffset = -constraints.maxHeight * 0.105;
       // initialHorizontalScrollOffset = -constraints.maxWidth * 0.1;
-      upMovementDistance = -constraints.maxHeight * 0.605;
-      downMovementDistance = -constraints.maxHeight * 0.105;
+      upMovementDistance = -constraints.maxHeight * 0.655;
+      downMovementDistance = -constraints.maxHeight * 0.055;
       rightMovementDistance = -constraints.maxWidth * 0.05;
       leftMovementDistance = -constraints.maxWidth * 0.65;
     }
@@ -420,5 +458,23 @@ class TestPageState extends State<TestPage> with TickerProviderStateMixin {
   void _zoomOut() {
     _animationController.reverse();
     isZoomedIn = false;
+  }
+
+  getSpiralIndex(int x, int y, int listMax) {
+    // Algoritmo de https://superzhu.gitbooks.io/bigdata/content/algo/get_spiral_index_from_location.html
+    int index = 0;
+
+    if (x * x >= y * y) {
+      index = 4 * x * x - x - y;
+      if (x < y) {
+        index = index - 2 * (x - y);
+      }
+    } else {
+      index = 4 * y * y - x - y;
+      if (x < y) {
+        index = index + 2 * (x - y);
+      }
+    }
+    return index % listMax;
   }
 }

@@ -132,49 +132,62 @@ class RubikComponentState extends State<RubikComponent>
               behavior: HitTestBehavior.opaque,
               onLongPress: _zoomOut,
               onPanUpdate: (details) {
-                // Swiping in up direction.
-                int sensitivity = 0;
-                if (details.delta.dy > sensitivity) {
-                  verticalIndex = swipeAction(
-                    SwipeDirection.up,
-                    verticalIndex,
-                    verticalController,
-                    upMovementDistance!,
-                    initialVerticalScrollOffset!,
-                  );
+                List<double> deltas = [details.delta.dx, details.delta.dy];
+                SwipeDirection movement;
+                double biggerMovement = deltas.reduce(
+                    (curr, next) => curr.abs() > next.abs() ? curr : next);
+                if (deltas.indexOf(biggerMovement) == 0) {
+                  if (biggerMovement > 0) {
+                    movement = SwipeDirection.left;
+                  } else {
+                    movement = SwipeDirection.right;
+                  }
+                } else {
+                  if (biggerMovement > 0) {
+                    movement = SwipeDirection.up;
+                  } else {
+                    movement = SwipeDirection.down;
+                  }
                 }
 
-                // Swiping in down direction.
-                if (details.delta.dy < -sensitivity) {
-                  verticalIndex = swipeAction(
-                    SwipeDirection.down,
-                    verticalIndex,
-                    verticalController,
-                    downMovementDistance!,
-                    initialVerticalScrollOffset!,
-                  );
-                }
-
-                // Swiping in right direction.
-                if (details.delta.dx < -sensitivity) {
-                  horizontalIndex = swipeAction(
-                    SwipeDirection.right,
-                    horizontalIndex,
-                    horizontalController,
-                    rightMovementDistance!,
-                    initialHorizontalScrollOffset!,
-                  );
-                }
-
-                // Swiping in left direction.
-                if (details.delta.dx > sensitivity) {
-                  horizontalIndex = swipeAction(
-                    SwipeDirection.left,
-                    horizontalIndex,
-                    horizontalController,
-                    leftMovementDistance!,
-                    initialHorizontalScrollOffset!,
-                  );
+                switch (movement) {
+                  case SwipeDirection.up:
+                    verticalIndex = swipeAction(
+                      SwipeDirection.up,
+                      verticalIndex,
+                      verticalController,
+                      upMovementDistance!,
+                      initialVerticalScrollOffset!,
+                    );
+                    break;
+                  case SwipeDirection.down:
+                    verticalIndex = swipeAction(
+                      SwipeDirection.down,
+                      verticalIndex,
+                      verticalController,
+                      downMovementDistance!,
+                      initialVerticalScrollOffset!,
+                    );
+                    break;
+                  case SwipeDirection.left:
+                    horizontalIndex = swipeAction(
+                      SwipeDirection.left,
+                      horizontalIndex,
+                      horizontalController,
+                      leftMovementDistance!,
+                      initialHorizontalScrollOffset!,
+                    );
+                    break;
+                  case SwipeDirection.right:
+                    horizontalIndex = swipeAction(
+                      SwipeDirection.right,
+                      horizontalIndex,
+                      horizontalController,
+                      rightMovementDistance!,
+                      initialHorizontalScrollOffset!,
+                    );
+                    break;
+                  default:
                 }
               },
               child: IndexedListView.builder(

@@ -103,15 +103,11 @@ class RubikComponentState extends State<RubikComponent>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-          appBar: AppBar(),
-          body: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-            if (buildSizes != null && buildSizes!) setSizes(constraints);
-            return _content(constraints);
-          })),
-    );
+    return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+      if (buildSizes != null && buildSizes!) setSizes(constraints);
+      return _content(constraints);
+    });
   }
 
   _content(BoxConstraints constraints) {
